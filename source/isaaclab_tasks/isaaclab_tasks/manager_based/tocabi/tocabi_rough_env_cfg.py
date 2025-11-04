@@ -26,6 +26,7 @@ from isaaclab_tasks.manager_based.locomotion.velocity.velocity_env_cfg import Lo
 ##
 
 # from isaaclab_assets.robots.cartpole import CARTPOLE_CFG  # isort:skip
+from isaaclab_tasks.manager_based.locomotion.velocity.mdp.actions import TocabiActionCfg
 from isaaclab_assets import Tocabi_CFG  # isort: skip
 
 
@@ -88,59 +89,74 @@ JOINT_NAMES = [
             "Head_Joint"
         ]
 
+LEG_JOINT_NAMES = [
+            ".*_HipYaw_Joint",
+            ".*_HipRoll_Joint",
+            ".*_HipPitch_Joint",
+            ".*_Knee_Joint",
+            ".*_AnklePitch_Joint",
+            ".*_AnkleRoll_Joint"
+        ]
 
-@configclass
-class ActionsCfg:
-    """Action specifications for the MDP."""
-
-    joint_pos = mdp.JointPositionActionCfg(
-        asset_name="robot",
-        joint_names=JOINT_NAMES,
-        scale=0.5,
-        use_default_offset=True,
-    )
+ARM_JOINT_NAMES = [".*_Shoulder1_Joint",
+            ".*_Shoulder2_Joint",
+            ".*_Shoulder3_Joint",
+            ".*_Armlink_Joint",
+            ".*_Elbow_Joint",
+            ".*_Forearm_Joint",
+            ".*_Wrist1_Joint",
+            ".*_Wrist2_Joint"
+        ]
 
 
 # @configclass
-# class TocabiActionsCfg:
-#     joint_pos = mdp.TocabiActionCfg(
-#         asset_name="robot", 
-#         clip = {".*": (-1.0, 1.0)},
-#         lower_joint_names=["L_HipYaw_Joint", "L_HipRoll_Joint", "L_HipPitch_Joint", "L_Knee_Joint", "L_AnklePitch_Joint", "L_AnkleRoll_Joint",
-#                            "R_HipYaw_Joint", "R_HipRoll_Joint", "R_HipPitch_Joint", "R_Knee_Joint", "R_AnklePitch_Joint", "R_AnkleRoll_Joint"],
-#         upper_joint_names=["Waist1_Joint", "Waist2_Joint", "Upperbody_Joint",
-#                            "L_Shoulder1_Joint", "L_Shoulder2_Joint", "L_Shoulder3_Joint", "L_Elbow_Joint", "L_Armlink_Joint", "L_Forearm_Joint", "L_Wrist1_Joint", "L_Wrist2_Joint",
-#                            "Neck_Joint", "Head_Joint",
-#                            "R_Shoulder1_Joint", "R_Shoulder2_Joint", "R_Shoulder3_Joint", "R_Elbow_Joint", "R_Armlink_Joint", "R_Forearm_Joint", "R_Wrist1_Joint", "R_Wrist2_Joint"],
-#         pd_control=True,
+# class ActionsCfg:
+#     """Action specifications for the MDP."""
 
-#         p_gains = [2000.0, 5000.0, 4000.0, 3700.0, 3200.0, 3200.0, 
-#                    2000.0, 5000.0, 4000.0, 3700.0, 3200.0, 3200.0, 
-#                    6000.0, 10000.0, 10000.0, 
-#                    400.0, 1000.0, 400.0, 400.0, 400.0, 400.0, 100.0, 100.0, 
-#                    100.0, 100.0, 
-#                    400.0, 1000.0, 400.0, 400.0, 400.0, 400.0, 100.0, 100.0],
-
-#         d_gains = [15.0, 50.0, 20.0, 25.0, 24.0, 24.0, 
-#                    15.0, 50.0, 20.0, 25.0, 24.0, 24.0, 
-#                    200.0, 100.0, 100.0, 
-#                    10.0, 28.0, 10.0, 10.0, 10.0, 10.0, 3.0, 3.0, 
-#                    3.0, 3.0, 
-#                    10.0, 28.0, 10.0, 10.0, 10.0, 10.0, 3.0, 3.0],
-
-#         torque_limits= [333, 232, 263, 289, 222, 166,
-#                         333, 232, 263, 289, 222, 166,
-#                         303, 303, 303,
-#                         64, 64, 64, 64, 23, 23, 10, 10,
-#                         10, 10,
-#                         64, 64, 64, 64, 23, 23, 10, 10],
-
-#         joint_pos_limits = [(-0.3, 0.3), (-0.5, 0.5), (-1.0, 0.5), (-0.3, 1.2), (-0.8, 0.5), (-0.6, 0.6), 
-#                             (-0.3, 0.3), (-0.5, 0.5), (-1.0, 0.5), (-0.3, 1.2), (-0.8, 0.5), (-0.6, 0.6)],
-
-#         rand_torque_inj_range = (-0.0, 0.0),
-#         rand_motor_scale_range = (0.8, 1.2)
+#     joint_pos = mdp.JointPositionActionCfg(
+#         asset_name="robot",
+#         joint_names=JOINT_NAMES,
+#         scale=1.0,
+#         use_default_offset=True,
 #     )
+
+
+@configclass
+class TocabiActionsCfg:
+    joint_pos = TocabiActionCfg(
+        asset_name="robot", 
+        lower_joint_names=["L_HipYaw_Joint", "L_HipRoll_Joint", "L_HipPitch_Joint", "L_Knee_Joint", "L_AnklePitch_Joint", "L_AnkleRoll_Joint",
+                           "R_HipYaw_Joint", "R_HipRoll_Joint", "R_HipPitch_Joint", "R_Knee_Joint", "R_AnklePitch_Joint", "R_AnkleRoll_Joint"],
+        upper_joint_names=["Waist1_Joint", "Waist2_Joint", "Upperbody_Joint",
+                           "L_Shoulder1_Joint", "L_Shoulder2_Joint", "L_Shoulder3_Joint", "L_Elbow_Joint", "L_Armlink_Joint", "L_Forearm_Joint", "L_Wrist1_Joint", "L_Wrist2_Joint",
+                           "Neck_Joint", "Head_Joint",
+                           "R_Shoulder1_Joint", "R_Shoulder2_Joint", "R_Shoulder3_Joint", "R_Elbow_Joint", "R_Armlink_Joint", "R_Forearm_Joint", "R_Wrist1_Joint", "R_Wrist2_Joint"],
+        pd_control=True,
+
+        p_gains = [2000.0, 5000.0, 4000.0, 3700.0, 3200.0, 3200.0, 
+                   2000.0, 5000.0, 4000.0, 3700.0, 3200.0, 3200.0, 
+                   6000.0, 10000.0, 10000.0, 
+                   400.0, 1000.0, 400.0, 400.0, 400.0, 400.0, 100.0, 100.0, 
+                   100.0, 100.0, 
+                   400.0, 1000.0, 400.0, 400.0, 400.0, 400.0, 100.0, 100.0],
+
+        d_gains = [15.0, 50.0, 20.0, 25.0, 24.0, 24.0, 
+                   15.0, 50.0, 20.0, 25.0, 24.0, 24.0, 
+                   200.0, 100.0, 100.0, 
+                   10.0, 28.0, 10.0, 10.0, 10.0, 10.0, 3.0, 3.0, 
+                   3.0, 3.0, 
+                   10.0, 28.0, 10.0, 10.0, 10.0, 10.0, 3.0, 3.0],
+
+        torque_limits= [333, 232, 263, 289, 222, 166,
+                        333, 232, 263, 289, 222, 166,
+                        303, 303, 303,
+                        64, 64, 64, 64, 23, 23, 10, 10,
+                        10, 10,
+                        64, 64, 64, 64, 23, 23, 10, 10],
+
+        joint_pos_limits = [(-0.3, 0.3), (-0.5, 0.5), (-1.0, 0.5), (-0.3, 1.2), (-0.8, 0.5), (-0.6, 0.6), 
+                            (-0.3, 0.3), (-0.5, 0.5), (-1.0, 0.5), (-0.3, 1.2), (-0.8, 0.5), (-0.6, 0.6)],
+    )
 
 # @configclass
 # class ObservationsCfg:
@@ -282,7 +298,8 @@ class TocabiRewards:
     )
     feet_air_time = RewardTermCfg(
         func=mdp.feet_air_time_positive_biped,
-        weight=0.25,
+        # weight=0.25,
+        weight=0.50,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_AnkleRoll_Link"),
             "threshold": 0.8,
@@ -314,67 +331,67 @@ class TocabiRewards:
         func=mdp.flat_orientation_l2,
         weight=-2.5,
     )
-    # stand_still = RewardTermCfg(
-    #     func=mdp.stand_still_joint_deviation_l1,
-    #     weight=-0.4,
-    #     params={
-    #         "command_name": "base_velocity",
-    #         "asset_cfg": SceneEntityCfg("robot", joint_names=LEG_JOINT_NAMES),
-    #     },
-    # )
-    # lin_vel_z_l2 = RewardTermCfg(
-    #     func=mdp.lin_vel_z_l2,
-    #     weight=-2.0,
-    # )
-    # ang_vel_xy_l2 = RewardTermCfg(
-    #     func=mdp.ang_vel_xy_l2,
-    #     weight=-0.1,
-    # )
-    # no_jumps = RewardTermCfg(
-    #     func=mdp.desired_contacts,
-    #     weight=-0.5,
-    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_leg_toe_roll"])},
-    # )
+    stand_still = RewardTermCfg(
+        func=mdp.stand_still_joint_deviation_l1,
+        weight=-0.4,
+        params={
+            "command_name": "base_velocity",
+            "asset_cfg": SceneEntityCfg("robot", joint_names=LEG_JOINT_NAMES),
+        },
+    )
+    lin_vel_z_l2 = RewardTermCfg(
+        func=mdp.lin_vel_z_l2,
+        weight=-2.0,
+    )
+    ang_vel_xy_l2 = RewardTermCfg(
+        func=mdp.ang_vel_xy_l2,
+        weight=-0.1,
+    )
+    no_jumps = RewardTermCfg(
+        func=mdp.desired_contacts,
+        weight=-0.5,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_AnkleRoll_Link"])},
+    )
     # dof_pos_limits = RewardTermCfg(
     #     func=mdp.joint_pos_limits,
     #     weight=-1.0,
-    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_leg_toe_roll", ".*_leg_toe_pitch", ".*_tarsus"])},
+    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_AnkleRoll_Joint", ".*_AnklePitch_Joint"])},
     # )
     # joint_deviation_hip_roll = RewardTermCfg(
     #     func=mdp.joint_deviation_l1,
     #     weight=-0.1,
-    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_leg_hip_roll")},
+    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_HipRoll_Joint")},
     # )
     # joint_deviation_hip_yaw = RewardTermCfg(
     #     func=mdp.joint_deviation_l1,
     #     weight=-0.2,
-    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_leg_hip_yaw")},
+    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_HipYaw_Joint")},
     # )
-    # joint_deviation_knee = RewardTermCfg(
-    #     func=mdp.joint_deviation_l1,
-    #     weight=-0.2,
-    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_tarsus")},
-    # )
-    # joint_deviation_feet = RewardTermCfg(
-    #     func=mdp.joint_deviation_l1,
-    #     weight=-0.1,
-    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_toe_a", ".*_toe_b"])},
-    # )
+    # # joint_deviation_knee = RewardTermCfg(
+    # #     func=mdp.joint_deviation_l1,
+    # #     weight=-0.2,
+    # #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_tarsus")},
+    # # )
+    # # joint_deviation_feet = RewardTermCfg(
+    # #     func=mdp.joint_deviation_l1,
+    # #     weight=-0.1,
+    # #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_toe_a", ".*_toe_b"])},
+    # # )
     # joint_deviation_arms = RewardTermCfg(
     #     func=mdp.joint_deviation_l1,
     #     weight=-0.2,
     #     params={
-    #         "asset_cfg": SceneEntityCfg("robot", joint_names=".*_arm_.*"),
+    #         "asset_cfg": SceneEntityCfg("robot", joint_names=ARM_JOINT_NAMES),
     #     },
     # )
-    # undesired_contacts = RewardTermCfg(
-    #     func=mdp.undesired_contacts,
-    #     weight=-0.1,
-    #     params={
-    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_rod", ".*_tarsus"]),
-    #         "threshold": 1.0,
-    #     },
-    # )
+    # # undesired_contacts = RewardTermCfg(
+    # #     func=mdp.undesired_contacts,
+    # #     weight=-0.1,
+    # #     params={
+    # #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_rod", ".*_tarsus"]),
+    # #         "threshold": 1.0,
+    # #     },
+    # # )
 
 
 # @configclass
@@ -441,7 +458,7 @@ class TocabiRoughEnvCfg(LocomotionVelocityRoughEnvCfg):
     rewards: TocabiRewards = TocabiRewards()
     observations: TocabiObservations = TocabiObservations()
     terminations: TerminationsCfg = TerminationsCfg()
-    actions: ActionsCfg = ActionsCfg()
+    actions: TocabiActionsCfg = TocabiActionsCfg()
 
     def __post_init__(self):
         super().__post_init__()
@@ -464,9 +481,9 @@ class TocabiRoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.events.base_com = None
 
         # Commands
-        self.commands.base_velocity.ranges.lin_vel_x = (-0.8, 0.8)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.6, 0.6)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
-        self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
+        self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
         self.commands.base_velocity.rel_standing_envs = 0.1
         self.commands.base_velocity.resampling_time_range = (3.0, 8.0)
 
@@ -477,7 +494,7 @@ class TocabiRoughEnvCfg_PLAY(TocabiRoughEnvCfg):
         super().__post_init__()
 
         # Make a smaller scene for play.
-        self.scene.num_envs = 50
+        self.scene.num_envs = 64
         self.scene.env_spacing = 2.5
         # Spawn the robot randomly in the grid (instead of their terrain levels).
         self.scene.terrain.max_init_terrain_level = None

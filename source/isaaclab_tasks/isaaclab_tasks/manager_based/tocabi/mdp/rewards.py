@@ -13,6 +13,7 @@ from isaaclab.managers import SceneEntityCfg
 # from isaaclab.utils.math import wrap_to_pi
 from isaaclab.sensors import ContactSensor
 from isaaclab.utils.math import quat_apply_inverse, yaw_quat
+from isaaclab.envs import mdp
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
