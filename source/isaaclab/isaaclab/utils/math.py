@@ -141,6 +141,14 @@ def copysign(mag: float, other: torch.Tensor) -> torch.Tensor:
 Rotation
 """
 
+def quat_to_heading(quat: torch.Tensor) -> torch.Tensor:
+    """Convert a quaternion to a heading.
+    """
+    forward_vec = torch.zeros_like(quat[..., :3])
+    forward_vec[..., 0] = 1.0
+    rot_delta = quat_apply(quat, forward_vec)
+    return torch.atan2(rot_delta[:, 1], rot_delta[:, 0])
+
 
 @torch.jit.script
 def quat_unique(q: torch.Tensor) -> torch.Tensor:

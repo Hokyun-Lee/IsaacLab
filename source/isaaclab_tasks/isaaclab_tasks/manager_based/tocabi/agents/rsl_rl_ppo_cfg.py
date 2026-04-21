@@ -41,7 +41,7 @@ from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, R
 class TocabiRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
     max_iterations = 3000
-    save_interval = 50
+    save_interval = 100
     experiment_name = "tocabi_rough"
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,
@@ -75,14 +75,14 @@ class TocabiFlatPPORunnerCfg(TocabiRoughPPORunnerCfg):
         self.max_iterations = 3000
         self.experiment_name = "tocabi_flat"
 
-        # self.policy.actor_hidden_dims = [256, 256, 128]
-        # self.policy.critic_hidden_dims = [256, 256, 128]
+        self.policy.actor_hidden_dims = [256, 256, 128]
+        self.policy.critic_hidden_dims = [256, 256, 128]
         # self.policy.actor_hidden_dims = [256, 256]
         # self.policy.critic_hidden_dims = [256, 256]
-        actor_hidden_dims=[512, 256, 128],
-        critic_hidden_dims=[512, 256, 128],
+        # self.policy.actor_hidden_dims=[512, 256, 128],
+        # self.policy.critic_hidden_dims=[512, 256, 128],
         # self.algorithm.learning_rate = 1.0e-3
-        self.algorithm.schedule= "adaptive"
+        # self.algorithm.schedule= "adaptive"
 
 
 @configclass

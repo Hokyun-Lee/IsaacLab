@@ -154,33 +154,60 @@ class TocabiActionsCfg:
                         10, 10,
                         64, 64, 64, 64, 23, 23, 10, 10],
 
-        joint_pos_limits = [(-0.3, 0.3), (-0.5, 0.5), (-1.0, 0.5), (-0.3, 1.2), (-0.8, 0.5), (-0.6, 0.6), 
-                            (-0.3, 0.3), (-0.5, 0.5), (-1.0, 0.5), (-0.3, 1.2), (-0.8, 0.5), (-0.6, 0.6)],
+        joint_pos_limits = [(-0.3, 0.3), (-0.5, 0.5), (-1.0, 0.5), (-0.3, 1.2), (-0.8, 0.5), (-0.2, 0.2),
+                            (-0.3, 0.3), (-0.5, 0.5), (-1.0, 0.5), (-0.3, 1.2), (-0.8, 0.5), (-0.2, 0.2)],
     )
-
-# @configclass
-# class ObservationsCfg:
-#     """Observation specifications for the MDP."""
-
-#     @configclass
-#     class PolicyCfg(ObsGroup):
-#         """Observations for policy group."""
-
-#         # observation terms (order preserved)
-#         joint_pos_rel = ObsTerm(func=mdp.joint_pos_rel)
-#         joint_vel_rel = ObsTerm(func=mdp.joint_vel_rel)
-
-#         def __post_init__(self) -> None:
-#             self.enable_corruption = False
-#             self.concatenate_terms = True
-
-#     # observation groups
-#     policy: PolicyCfg = PolicyCfg()
 
 @configclass
 class TocabiObservations:
     @configclass
     class PolicyCfg(ObservationGroupCfg):
+        # base_lin_vel = ObservationTermCfg(
+        #     func=mdp.base_lin_vel,
+        #     noise=Unoise(n_min=-0.1, n_max=0.1),
+        # )
+        base_ang_vel = ObservationTermCfg(
+            func=mdp.base_ang_vel,
+            noise=Unoise(n_min=-0.2, n_max=0.2),
+        )
+        projected_gravity = ObservationTermCfg(
+            func=mdp.projected_gravity,
+            noise=Unoise(n_min=-0.05, n_max=0.05),
+        )
+        velocity_commands = ObservationTermCfg(
+            func=mdp.generated_commands,
+            params={"command_name": "base_velocity"},
+        )
+        joint_pos = ObservationTermCfg(
+            func=mdp.joint_pos_rel,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names=JOINT_NAMES)},
+            noise=Unoise(n_min=-0.01, n_max=0.01),
+        )
+        joint_vel = ObservationTermCfg(
+            func=mdp.joint_vel_rel,
+            params={"asset_cfg": SceneEntityCfg("robot", joint_names=JOINT_NAMES)},
+            noise=Unoise(n_min=-1.5, n_max=1.5),
+        )
+        actions = ObservationTermCfg(func=mdp.last_action)
+        # height_scan = ObservationTermCfg(
+        #     func=mdp.height_scan,
+        #     params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+        #     noise=Unoise(n_min=-0.1, n_max=0.1),
+        #     clip=(-1.0, 1.0),
+        # )
+
+        def __post_init__(self):
+            self.history_length = 10
+            self.enable_corruption = True
+            self.concatenate_terms = True
+
+    # Observation groups:
+    policy: PolicyCfg = PolicyCfg()
+
+    @configclass
+    class CriticCfg(ObservationGroupCfg):
+        """Observations for critic group."""
+
         base_lin_vel = ObservationTermCfg(
             func=mdp.base_lin_vel,
             noise=Unoise(n_min=-0.1, n_max=0.1),
@@ -208,74 +235,18 @@ class TocabiObservations:
             noise=Unoise(n_min=-1.5, n_max=1.5),
         )
         actions = ObservationTermCfg(func=mdp.last_action)
-        height_scan = ObservationTermCfg(
-            func=mdp.height_scan,
-            params={"sensor_cfg": SceneEntityCfg("height_scanner")},
-            noise=Unoise(n_min=-0.1, n_max=0.1),
-            clip=(-1.0, 1.0),
-        )
+        # height_scan = ObservationTermCfg(
+        #     func=mdp.height_scan,
+        #     params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+        #     noise=Unoise(n_min=-0.1, n_max=0.1),
+        #     clip=(-1.0, 1.0),
+        # )
 
         def __post_init__(self):
-            self.enable_corruption = True
-            self.concatenate_terms = True
+            self.history_length = 10
 
-    # Observation groups:
-    policy: PolicyCfg = PolicyCfg()
-
-
-
-# @configclass
-# class EventCfg:
-#     """Configuration for events."""
-
-#     # reset
-#     reset_cart_position = EventTerm(
-#         func=mdp.reset_joints_by_offset,
-#         mode="reset",
-#         params={
-#             "asset_cfg": SceneEntityCfg("robot", joint_names=["slider_to_cart"]),
-#             "position_range": (-1.0, 1.0),
-#             "velocity_range": (-0.5, 0.5),
-#         },
-#     )
-
-#     reset_pole_position = EventTerm(
-#         func=mdp.reset_joints_by_offset,
-#         mode="reset",
-#         params={
-#             "asset_cfg": SceneEntityCfg("robot", joint_names=["cart_to_pole"]),
-#             "position_range": (-0.25 * math.pi, 0.25 * math.pi),
-#             "velocity_range": (-0.25 * math.pi, 0.25 * math.pi),
-#         },
-#     )
-
-
-# @configclass
-# class RewardsCfg:
-#     """Reward terms for the MDP."""
-
-#     # (1) Constant running reward
-#     alive = RewTerm(func=mdp.is_alive, weight=1.0)
-#     # (2) Failure penalty
-#     terminating = RewTerm(func=mdp.is_terminated, weight=-2.0)
-#     # (3) Primary task: keep pole upright
-#     pole_pos = RewTerm(
-#         func=mdp.joint_pos_target_l2,
-#         weight=-1.0,
-#         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["cart_to_pole"]), "target": 0.0},
-#     )
-#     # (4) Shaping tasks: lower cart velocity
-#     cart_vel = RewTerm(
-#         func=mdp.joint_vel_l1,
-#         weight=-0.01,
-#         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["slider_to_cart"])},
-#     )
-#     # (5) Shaping tasks: lower pole angular velocity
-#     pole_vel = RewTerm(
-#         func=mdp.joint_vel_l1,
-#         weight=-0.005,
-#         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["cart_to_pole"])},
-#     )
+    # privileged observations
+    critic: CriticCfg = CriticCfg()
 
 @configclass
 class TocabiRewards:
@@ -283,6 +254,8 @@ class TocabiRewards:
         func=mdp.is_terminated,
         weight=-100.0,
     )
+    #alive()
+
     track_lin_vel_xy_exp = RewardTermCfg(
         func=mdp.track_lin_vel_xy_yaw_frame_exp,
         weight=1.0,
@@ -296,49 +269,7 @@ class TocabiRewards:
             "std": math.sqrt(0.25),
         },
     )
-    feet_air_time = RewardTermCfg(
-        func=mdp.feet_air_time_positive_biped,
-        # weight=0.25,
-        weight=0.50,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_AnkleRoll_Link"),
-            "threshold": 0.8,
-            "command_name": "base_velocity",
-        },
-    )
-    feet_slide = RewardTermCfg(
-        func=mdp.feet_slide,
-        weight=-0.25,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_AnkleRoll_Link"),
-            "asset_cfg": SceneEntityCfg("robot", body_names=".*_AnkleRoll_Link"),
-        },
-    )
-    dof_torques_l2 = RewardTermCfg(
-        func=mdp.joint_torques_l2,
-        weight=-1.0e-6,
-    )
-    dof_acc_l2 = RewardTermCfg(
-        func=mdp.joint_acc_l2,
-        weight=-2.0e-7,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=JOINT_NAMES)},
-    )
-    action_rate_l2 = RewardTermCfg(
-        func=mdp.action_rate_l2,
-        weight=-0.008,
-    )
-    flat_orientation_l2 = RewardTermCfg(
-        func=mdp.flat_orientation_l2,
-        weight=-2.5,
-    )
-    stand_still = RewardTermCfg(
-        func=mdp.stand_still_joint_deviation_l1,
-        weight=-0.4,
-        params={
-            "command_name": "base_velocity",
-            "asset_cfg": SceneEntityCfg("robot", joint_names=LEG_JOINT_NAMES),
-        },
-    )
+
     lin_vel_z_l2 = RewardTermCfg(
         func=mdp.lin_vel_z_l2,
         weight=-2.0,
@@ -347,31 +278,131 @@ class TocabiRewards:
         func=mdp.ang_vel_xy_l2,
         weight=-0.1,
     )
-    no_jumps = RewardTermCfg(
-        func=mdp.desired_contacts,
-        weight=-0.5,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=[".*_AnkleRoll_Link"])},
+    flat_orientation_l2 = RewardTermCfg(
+        func=mdp.flat_orientation_l2,
+        weight=-2.5,
     )
-    # dof_pos_limits = RewardTermCfg(
-    #     func=mdp.joint_pos_limits,
-    #     weight=-1.0,
-    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_AnkleRoll_Joint", ".*_AnklePitch_Joint"])},
+
+    joint_vel = RewardTermCfg(func=mdp.joint_vel_l2, weight=-0.001)
+    joint_acc = RewardTermCfg(func=mdp.joint_acc_l2, weight=-2.5e-7)
+    action_rate_l2 = RewardTermCfg(
+        func=mdp.action_rate_l2,
+        weight=-0.008,
+    )
+    dof_pos_limits = RewardTermCfg(
+        func=mdp.joint_pos_limits,
+        weight=-1.0,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_AnkleRoll_Joint", ".*_AnklePitch_Joint"])},
+    )
+    #energy()
+
+    # #JOINT DEVIATION TERMS
+    joint_deviation_hip_roll = RewardTermCfg(
+        func=mdp.joint_deviation_l1,
+        weight=-0.5,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_HipRoll_Joint")},
+    )
+    joint_deviation_hip_pitch = RewardTermCfg(
+        func=mdp.joint_deviation_l1,
+        weight=-0.5,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_HipPitch_Joint")},
+    )
+    joint_deviation_knee = RewardTermCfg(
+        func=mdp.joint_deviation_l1,
+        weight=-0.15,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_Knee_Joint")},
+    )
+    joint_deviation_hip_yaw = RewardTermCfg(
+        func=mdp.joint_deviation_l1,
+        weight=-0.2,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_HipYaw_Joint")},
+    )
+    joint_deviation_ankle_pitch = RewardTermCfg(
+        func=mdp.joint_deviation_l1,
+        weight=-0.05,
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_AnklePitch_Joint")},
+    )
+
+
+    # #Feet
+    # gait = RewardTermCfg(
+    #     func=mdp.feet_gait,
+    #     # weight=1.0,
+    #     weight=0.2,
+    #     params={
+    #         "period": 0.8,
+    #         # "period": 1.8,
+    #         "offset": [0.0, 0.5],
+    #         # "threshold": 0.55,
+    #         "threshold": 0.60,
+    #         # "threshold": 0.65,
+    #         "command_name": "base_velocity",
+    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_AnkleRoll_Link"),
+    #     },
     # )
-    # joint_deviation_hip_roll = RewardTermCfg(
-    #     func=mdp.joint_deviation_l1,
-    #     weight=-0.1,
-    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_HipRoll_Joint")},
+
+    feet_clearance = RewardTermCfg(
+        func=mdp.foot_clearance_reward,
+        weight=1.0,
+        params={
+            "std": 0.05,
+            # "tanh_mult": 2.0,
+            "tanh_mult": 10.0,
+            # "target_height": 0.23,
+            "target_height": 0.25,
+            "asset_cfg": SceneEntityCfg("robot", body_names=["R_AnkleRoll_Link", "L_AnkleRoll_Link"]),
+        },
+    )
+
+
+    # base_height = RewardTermCfg(func=mdp.base_height_l2, weight=-10, params={"target_height": 0.88})
+    # feet_air_time = RewardTermCfg(
+    #     func=mdp.feet_air_time_positive_biped,
+    #     # weight=0.25,
+    #     weight=0.50,
+    #     params={
+    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_AnkleRoll_Link"),
+    #         "threshold": 0.8,
+    #         "command_name": "base_velocity",
+    #     },
     # )
-    # joint_deviation_hip_yaw = RewardTermCfg(
-    #     func=mdp.joint_deviation_l1,
-    #     weight=-0.2,
-    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_HipYaw_Joint")},
+    feet_slide = RewardTermCfg(
+        func=mdp.feet_slide,
+        weight=-0.25,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_AnkleRoll_Link"),
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*_AnkleRoll_Link"),
+        },
+    )
+    # dof_torques_l2 = RewardTermCfg(
+    #     func=mdp.joint_torques_l2,
+    #     weight=-1.0e-6,
     # )
-    # # joint_deviation_knee = RewardTermCfg(
-    # #     func=mdp.joint_deviation_l1,
-    # #     weight=-0.2,
-    # #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*_tarsus")},
-    # # )
+    # dof_acc_l2 = RewardTermCfg(
+    #     func=mdp.joint_acc_l2,
+    #     weight=-2.0e-7,
+    #     params={"asset_cfg": SceneEntityCfg("robot", joint_names=JOINT_NAMES)},
+    # )
+
+
+    # stand_still = RewardTermCfg(
+    #     func=mdp.stand_still_joint_deviation_l1,
+    #     weight=-0.4,
+    #     params={
+    #         "command_name": "base_velocity",
+    #         "asset_cfg": SceneEntityCfg("robot", joint_names=LEG_JOINT_NAMES),
+    #     },
+    # )
+
+    # no_jumps = RewardTermCfg(
+    #     func=mdp.desired_contacts,
+    #     weight=-0.5,
+    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_AnkleRoll_Link")},
+    # )
+
+    
+
+
     # # joint_deviation_feet = RewardTermCfg(
     # #     func=mdp.joint_deviation_l1,
     # #     weight=-0.1,
@@ -392,19 +423,6 @@ class TocabiRewards:
     # #         "threshold": 1.0,
     # #     },
     # # )
-
-
-# @configclass
-# class TerminationsCfg:
-#     """Termination terms for the MDP."""
-
-#     # (1) Time out
-#     time_out = DoneTerm(func=mdp.time_out, time_out=True)
-#     # (2) Cart out of bounds
-#     cart_out_of_bounds = DoneTerm(
-#         func=mdp.joint_pos_out_of_manual_limit,
-#         params={"asset_cfg": SceneEntityCfg("robot", joint_names=["slider_to_cart"]), "bounds": (-3.0, 3.0)},
-#     )
 
 @configclass
 class TerminationsCfg:
@@ -428,31 +446,6 @@ class TerminationsCfg:
 # Environment configuration
 ##
 
-
-# @configclass
-# class TocabiEnvCfg(ManagerBasedRLEnvCfg):
-#     # Scene settings
-#     scene: TocabiSceneCfg = TocabiSceneCfg(num_envs=4096, env_spacing=4.0)
-#     # Basic settings
-#     observations: ObservationsCfg = ObservationsCfg()
-#     actions: ActionsCfg = ActionsCfg()
-#     events: EventCfg = EventCfg()
-#     # MDP settings
-#     rewards: RewardsCfg = RewardsCfg()
-#     terminations: TerminationsCfg = TerminationsCfg()
-
-#     # Post initialization
-#     def __post_init__(self) -> None:
-#         """Post initialization."""
-#         # general settings
-#         self.decimation = 2
-#         self.episode_length_s = 5
-#         # viewer settings
-#         self.viewer.eye = (8.0, 0.0, 5.0)
-#         # simulation settings
-#         self.sim.dt = 1 / 120
-#         self.sim.render_interval = self.decimation
-
 @configclass
 class TocabiRoughEnvCfg(LocomotionVelocityRoughEnvCfg):
     rewards: TocabiRewards = TocabiRewards()
@@ -464,6 +457,9 @@ class TocabiRoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         super().__post_init__()
         self.decimation = 4
         self.sim.dt = 0.005
+        self.episode_length_s = 5
+        # self.decimation = 2
+        # self.sim.dt = 0.002
 
         # Scene
         self.scene.robot = Tocabi_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
@@ -486,6 +482,14 @@ class TocabiRoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.commands.base_velocity.ranges.ang_vel_z = (-0.5, 0.5)
         self.commands.base_velocity.rel_standing_envs = 0.1
         self.commands.base_velocity.resampling_time_range = (3.0, 8.0)
+
+        # #PLAY
+        # # Commands
+        # self.commands.base_velocity.ranges.lin_vel_x = (0.2, 0.4)
+        # self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
+        # self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)
+        # self.commands.base_velocity.rel_standing_envs = 0.1
+        # self.commands.base_velocity.resampling_time_range = (3.0, 8.0)
 
 
 @configclass
